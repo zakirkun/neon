@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/zakirkun/neon/internal/config"
@@ -77,14 +79,13 @@ func (d *Deployer) buildImage(ctx context.Context, repoPath string) (string, err
 
 	return imageName, nil
 }
-
 func (d *Deployer) pushImage(ctx context.Context, imageName string) error {
-	authConfig := types.AuthConfig{
+	authConfig := registry.AuthConfig{
 		Username: d.config.Docker.Username,
 		Password: d.config.Docker.Password,
 	}
 
-	_, err := d.client.ImagePush(ctx, imageName, types.ImagePushOptions{
+	_, err := d.client.ImagePush(ctx, imageName, image.PushOptions{
 		RegistryAuth: authConfig.Username + ":" + authConfig.Password,
 	})
 	if err != nil {

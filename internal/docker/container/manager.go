@@ -2,6 +2,8 @@ package container
 
 import (
 	"context"
+	"io"
+	"os"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -17,11 +19,11 @@ func NewManager(client *docker.Client) *Manager {
 }
 
 func (m *Manager) List(ctx context.Context) ([]types.Container, error) {
-	return m.client.ContainerList(ctx, types.ContainerListOptions{All: true})
+	return m.client.ContainerList(ctx, container.ListOptions{All: true})
 }
 
 func (m *Manager) Start(ctx context.Context, containerID string) error {
-	return m.client.ContainerStart(ctx, containerID, types.ContainerStartOptions{})
+	return m.client.ContainerStart(ctx, containerID, container.StartOptions{})
 }
 
 func (m *Manager) Stop(ctx context.Context, containerID string) error {
@@ -29,25 +31,19 @@ func (m *Manager) Stop(ctx context.Context, containerID string) error {
 }
 
 func (m *Manager) Remove(ctx context.Context, containerID string, force bool) error {
-	return m.client.ContainerRemove(ctx, containerID, types.ContainerRemoveOptions{Force: force})
+	return m.client.ContainerRemove(ctx, containerID, container.RemoveOptions{Force: force})
 }
 
-func (m *Manager) Logs(ctx context.Context, containerID string) (string, error) {
-	logs, err := m.client.ContainerLogs(ctx, containerID, types.ContainerLogsOptions{
+func (m *Manager) Logs(ctx context.Context, containerID string) error {
+	logs, err := m.client.ContainerLogs(ctx, containerID, container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 	})
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer logs.Close()
 
-	// Convert logs to string
-	buf := new([]byte)
-	_, err = logs.Read(*buf)
-	if err != nil {
-		return "", err
-	}
-
-	return string(*buf), nil
+	_, err = io.Copy(os.Stdout, logs)
+	return err
 }

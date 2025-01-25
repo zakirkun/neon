@@ -16,7 +16,7 @@ func NewManager(client *docker.Client) *Manager {
 	return &Manager{client: client}
 }
 
-func (m *Manager) InitSwarm(ctx context.Context, advertiseAddr string) error {
+func (m *Manager) InitSwarm(ctx context.Context, advertiseAddr string) (string, error) {
 	req := swarm.InitRequest{
 		ListenAddr:    "0.0.0.0:2377",
 		AdvertiseAddr: advertiseAddr,
@@ -54,5 +54,6 @@ func (m *Manager) ScaleService(ctx context.Context, serviceID string, replicas u
 
 	service.Spec.Mode.Replicated.Replicas = &replicas
 
-	return m.client.ServiceUpdate(ctx, serviceID, service.Version, service.Spec, types.ServiceUpdateOptions{})
+	_, err = m.client.ServiceUpdate(ctx, serviceID, service.Version, service.Spec, types.ServiceUpdateOptions{})
+	return err
 }
