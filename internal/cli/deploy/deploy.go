@@ -30,7 +30,7 @@ func NewDeployCmd() *cobra.Command {
 
 	cmd.AddCommand(
 		newZeroDowntimeCmd(),
-		newConfigCmd(),
+		newConfigDeployCmd(),
 		newComposeCmd(),
 	)
 
