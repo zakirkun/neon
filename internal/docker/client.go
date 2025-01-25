@@ -1,6 +1,8 @@
 package docker
 
 import (
+	"fmt"
+
 	"github.com/docker/docker/client"
 )
 
@@ -9,9 +11,19 @@ type Client struct {
 }
 
 func NewClient() (*Client, error) {
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	// Set API version to match server
+	client.WithVersion("1.45")
+
+	cli, err := client.NewClientWithOpts(
+		client.FromEnv,
+		client.WithVersion("1.45"), // Pin API version
+		client.WithAPIVersionNegotiation(),
+	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create docker client: %v", err)
 	}
-	return &Client{cli}, nil
+
+	return &Client{
+		Client: cli,
+	}, nil
 }

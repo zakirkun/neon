@@ -1,16 +1,25 @@
 package config
 
 import (
+	"flag"
 	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 )
 
-type Config struct {
-	Github struct {
-		Token string `yaml:"token"`
-	} `yaml:"github"`
+var (
+	configPath string
+	cfg        Config
+)
 
+func init() {
+	homeDir, _ := os.UserHomeDir()
+	defaultConfig := filepath.Join(homeDir, ".neon", "config.yaml")
+	flag.StringVar(&configPath, "config", defaultConfig, "Path to config file")
+}
+
+type Config struct {
 	Docker struct {
 		Registry string `yaml:"registry"`
 		Username string `yaml:"username"`
@@ -30,18 +39,15 @@ type Config struct {
 	} `yaml:"deploy"`
 }
 
-func LoadConfig(path string) (*Config, error) {
-	config := &Config{}
-
-	data, err := os.ReadFile(path)
+func Load() error {
+	data, err := os.ReadFile(configPath)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	err = yaml.Unmarshal(data, config)
-	if err != nil {
-		return nil, err
-	}
+	return yaml.Unmarshal(data, &cfg)
+}
 
-	return config, nil
+func Get() *Config {
+	return &cfg
 }

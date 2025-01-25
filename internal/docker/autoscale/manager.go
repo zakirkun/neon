@@ -93,9 +93,14 @@ type serviceStats struct {
 }
 
 func (m *Manager) getServiceStats(ctx context.Context, serviceID string) (*serviceStats, error) {
-	// Implementasi pengambilan statistik service
-	// TODO: Implementasi detail monitoring metrics
-	return &serviceStats{}, nil
+	stats, err := m.swarmManager.GetServiceStats(ctx, serviceID)
+	if err != nil {
+		return nil, err
+	}
+	return &serviceStats{
+		replicas: stats.Replicas,
+		cpuUsage: stats.CPUUsage,
+	}, nil
 }
 
 func min(a, b uint64) uint64 {

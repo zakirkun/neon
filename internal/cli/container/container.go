@@ -2,8 +2,13 @@ package container
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"os"
+	"strconv"
 
+	dContainer "github.com/docker/docker/api/types/container"
 	"github.com/spf13/cobra"
 	"github.com/zakirkun/neon/internal/docker"
 	"github.com/zakirkun/neon/internal/docker/container"
@@ -12,7 +17,7 @@ import (
 func NewContainerCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "container",
-		Short: "Manajemen Docker container",
+		Short: "Manage Docker containers",
 	}
 
 	cmd.AddCommand(
@@ -21,6 +26,7 @@ func NewContainerCmd() *cobra.Command {
 		newStopCmd(),
 		newRemoveCmd(),
 		newLogsCmd(),
+		newInspectCmd(),
 	)
 
 	return cmd
@@ -112,21 +118,66 @@ func newRemoveCmd() *cobra.Command {
 }
 
 func newLogsCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "logs [container-id]",
-		Short: "Menampilkan logs container",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) < 1 {
-				return fmt.Errorf("container ID diperlukan")
-			}
+	var tail int
+	var follow bool
 
+	cmd := &cobra.Command{
+		Use:   "logs [container-id]",
+		Short: "Fetch the logs of a container",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := docker.NewClient()
 			if err != nil {
 				return err
 			}
 
-			manager := container.NewManager(client)
-			return manager.Logs(context.Background(), args[0])
+			options := dContainer.LogsOptions{
+				ShowStdout: true,
+				ShowStderr: true,
+				Follow:     follow,
+				Tail:       strconv.Itoa(tail),
+			}
+
+			logs, err := client.ContainerLogs(context.Background(), args[0], options)
+			if err != nil {
+				return err
+			}
+			defer logs.Close()
+
+			_, err = io.Copy(os.Stdout, logs)
+			return err
+		},
+	}
+
+	cmd.Flags().IntVarP(&tail, "tail", "n", 100, "Number of lines to show from the end of the logs")
+	cmd.Flags().BoolVarP(&follow, "follow", "f", false, "Follow log output")
+
+	return cmd
+}
+
+func newInspectCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "inspect [container-id]",
+		Short: "Display detailed information on a container",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			client, err := docker.NewClient()
+			if err != nil {
+				return err
+			}
+
+			container, err := client.ContainerInspect(context.Background(), args[0])
+			if err != nil {
+				return err
+			}
+
+			data, err := json.MarshalIndent(container, "", "  ")
+			if err != nil {
+				return err
+			}
+
+			fmt.Println(string(data))
+			return nil
 		},
 	}
 }

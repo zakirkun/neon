@@ -1,0 +1,35 @@
+# Deployment configuration
+services:
+  webapp:
+    image: registry.example.com/webapp:latest
+    replicas: 3
+    update_config:
+      parallelism: 1
+      delay: 10s
+      order: start-first
+      failure_action: rollback
+      monitor: 5s
+    rollback_config:
+      parallelism: 1
+      delay: 5s
+      order: stop-first
+      failure_action: pause
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    resources:
+      limits:
+        cpus: '0.5'
+        memory: 512M
+    networks:
+      - neon-network
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=db.example.com
+
+networks:
+  neon-network:
+    driver: overlay
+    attachable: true 

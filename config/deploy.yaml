@@ -1,0 +1,23 @@
+services:
+  - name: app1
+    image: registry.example.com/app1:latest
+    replicas: 3
+    ports:
+      - target: 8080
+        published: 80
+    environment:
+      - DB_HOST=db.example.com
+      - DB_PORT=5432
+    networks:
+      - neon-network
+    deploy:
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M 
