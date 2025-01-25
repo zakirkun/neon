@@ -1,0 +1,18 @@
+# Konfigurasi Default
+github:
+  token: ""  # GitHub Personal Access Token
+  
+docker:
+  registry: ""  # Docker registry URL
+  username: ""
+  password: ""
+
+swarm:
+  manager_node: "127.0.0.1:2377"
+  network_name: "neon-network"
+
+deploy:
+  replicas: 3
+  update_delay: "30s"
+  rollback_delay: "15s"
+  failure_action: "rollback"  # rollback/pause/continue 
